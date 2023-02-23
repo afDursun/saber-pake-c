@@ -3,7 +3,7 @@ In the KEM category, the CRYSTALS-KYBER algorithm was announced as the standard 
 
 cycles/ticks data of Saber-PAKE parameter sets
 
-| Algorithm | LightSaber          |  Saber           | FireSaber          |
+| Algorithm | LightSaber |         |  Saber  |         | FireSaber |         |
 |:---------:|:----------:|:-------:|:-------:|:-------:|:---------:|:-------:|
 |  Process  |   Median   | Average |  Median | Average |   Median  | Average |
 |     c0    |   83 991   | 105 451 | 146 118 | 162 673 |  232 836  | 232 836 |
