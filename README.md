@@ -1,5 +1,5 @@
 # Saber-PAKE-C
-SABER is the 3rd round lattice-based candidate algorithm in the standardization process initiated for NIST public-key cryptosystems. This repository is the PAKE version of Saber. 
+SABER is the 3rd round lattice-based candidate algorithm in the standardization process initiated for NIST (National Institute of Standards and Technology) public-key cryptosystems. This repository is the PAKE (password authentication key exchange) version of Saber. 
 
 ## Saber-PAKE's Performance Data
 <br/>
