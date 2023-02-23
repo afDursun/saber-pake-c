@@ -3,13 +3,32 @@ In the KEM category, the CRYSTALS-KYBER algorithm was announced as the standard 
 
 cycles/ticks data of Saber-PAKE parameter sets
 
-| Algorithm | LightSaber |         |  Saber  |         | FireSaber |         |
-|:---------:|:----------:|:-------:|:-------:|:-------:|:---------:|:-------:|
-|  Process  |   Median   | Average |  Median | Average |   Median  | Average |
-|     c0    |   83 991   | 105 451 | 146 118 | 162 673 |  232 836  | 232 836 |
-|     s0    |   94 458   | 100 739 | 162 489 | 170 159 |  255 237  | 278 094 |
-|     c1    |   138 936  | 145 535 | 243 192 | 250 179 |  348 654  | 371 197 |
-|     s1    |   41 802   |  44 412 |  59 391 |  63 862 |   80 820  |  86 409 |
+<table>
+    <thead>
+        <tr>
+            <th>Layer 1</th>
+            <th>Layer 2</th>
+            <th>Layer 3</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td rowspan=4>L1 Name</td>
+            <td rowspan=2>L2 Name A</td>
+            <td>L3 Name A</td>
+        </tr>
+        <tr>
+            <td>L3 Name B</td>
+        </tr>
+        <tr>
+            <td rowspan=2>L2 Name B</td>
+            <td>L3 Name C</td>
+        </tr>
+        <tr>
+            <td>L3 Name D</td>
+        </tr>
+    </tbody>
+</table>
 
 
 Saber provides 3 different security categories. (LightSaber 128-bit; Saber 192-bit; FireSaber 256-bit). These security levels are provided by the SABER_L variable in the "SABER_params.h" file.
