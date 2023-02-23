@@ -4,30 +4,61 @@ In the KEM category, the CRYSTALS-KYBER algorithm was announced as the standard 
 cycles/ticks data of Saber-PAKE parameter sets
 
 <table>
-    <thead>
-        <tr>
-            <th>Layer 1</th>
-            <th>Layer 2</th>
-            <th>Layer 3</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td rowspan=4>L1 Name</td>
-            <td rowspan=2>L2 Name A</td>
-            <td>L3 Name A</td>
-        </tr>
-        <tr>
-            <td>L3 Name B</td>
-        </tr>
-        <tr>
-            <td rowspan=2>L2 Name B</td>
-            <td>L3 Name C</td>
-        </tr>
-        <tr>
-            <td>L3 Name D</td>
-        </tr>
-    </tbody>
+<thead>
+  <tr>
+    <th>Algorithm</th>
+    <th colspan="2">LightSaber</th>
+    <th colspan="2">Saber</th>
+    <th colspan="2">FireSaber</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>Process</td>
+    <td>Median</td>
+    <td>Average</td>
+    <td>Median</td>
+    <td>Average</td>
+    <td>Median</td>
+    <td>Average</td>
+  </tr>
+  <tr>
+    <td>c0</td>
+    <td>83 991</td>
+    <td>105 451</td>
+    <td>146 118</td>
+    <td>162 673</td>
+    <td>232 836</td>
+    <td>232 836</td>
+  </tr>
+  <tr>
+    <td>s0</td>
+    <td>94 458</td>
+    <td>100 739</td>
+    <td>162 489</td>
+    <td>170 159</td>
+    <td>255 237</td>
+    <td>278 094</td>
+  </tr>
+  <tr>
+    <td>c1</td>
+    <td>138 936</td>
+    <td>145 535</td>
+    <td>243 192</td>
+    <td>250 179</td>
+    <td>348 654</td>
+    <td>371 197</td>
+  </tr>
+  <tr>
+    <td>s1</td>
+    <td>41 802</td>
+    <td>44 412</td>
+    <td>59 391</td>
+    <td>63 862</td>
+    <td>80 820</td>
+    <td>86 409</td>
+  </tr>
+</tbody>
 </table>
 
 
