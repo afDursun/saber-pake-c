@@ -1,8 +1,9 @@
 # Saber-PAKE-C
 In the KEM category, the CRYSTALS-KYBER algorithm was announced as the standard algorithm by NIST. This repository is the PAKE version of Kyber.  SABER is the 3rd round lattice-based candidate algorithm in the standardization process initiated for NIST public-key cryptosystems. This repository is the PAKE version of Saber. 
 
-cycles/ticks data of Saber-PAKE parameter sets
-
+## Saber-PAKE's Performance Data
+<br/>
+<i>cycles/ticks data of Saber-PAKE parameter sets:</i>
 <table>
 <thead>
   <tr>
@@ -61,7 +62,47 @@ cycles/ticks data of Saber-PAKE parameter sets
 </tbody>
 </table>
 
+<br/>
+<i>The average time data (µs) of Saber-PAKE parameter sets:</i>
+<table>
+<thead>
+  <tr>
+    <th>Process</th>
+    <th>LightSaber</th>
+    <th>Saber</th>
+    <th>FireSaber</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td>c0</td>
+    <td>44.039</td>
+    <td>67.939</td>
+    <td>102.735</td>
+  </tr>
+  <tr>
+    <td>s0</td>
+    <td>42.077</td>
+    <td>71.068</td>
+    <td>116.139</td>
+  </tr>
+  <tr>
+    <td>c1</td>
+    <td>60.785</td>
+    <td>104.488</td>
+    <td>155.021</td>
+  </tr>
+  <tr>
+    <td>s1</td>
+    <td>18.555</td>
+    <td>26.690</td>
+    <td>36.093</td>
+  </tr>
+</tbody>
+</table>
 
+
+## How to run Saber-PAKE
 Saber provides 3 different security categories. (LightSaber 128-bit; Saber 192-bit; FireSaber 256-bit). These security levels are provided by the SABER_L variable in the "SABER_params.h" file.
 
 ```c
