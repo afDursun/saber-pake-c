@@ -9,12 +9,14 @@
 #include "rng.h"
 #include "SABER_indcpa.h"
 #include "verify.h"
+#include "SABER_indcpa.h"
 #include "cpucycles.c"
 #include "cpucycles1.c"
 #include "cpucycles1.h"
 #include <sys/time.h>
 #include "speed_print.h"
-
+#include "rng.h"
+#include "fips202.h"
 // void fprintBstr(char *S, unsigned char *A, unsigned long long L)
 // {
 // 	unsigned long long  i;
@@ -33,50 +35,58 @@
 uint64_t clock1,clock2;
 uint64_t clock_kp_mv,clock_cl_mv, clock_kp_sm, clock_cl_sm;
 
+
+#define h1 (1 << (SABER_EQ - SABER_EP - 1))
+#define h2 ((1 << (SABER_EP - 2)) - (1 << (SABER_EP - SABER_ET - 1)) + (1 << (SABER_EQ - SABER_EP - 1)))
+
+
+
 static int cmp_uint64(const void *a, const void *b) {
-  if(*(uint64_t *)a < *(uint64_t *)b) return -1;
-  if(*(uint64_t *)a > *(uint64_t *)b) return 1;
-  return 0;
+	if(*(uint64_t *)a < *(uint64_t *)b) return -1;
+	if(*(uint64_t *)a > *(uint64_t *)b) return 1;
+	return 0;
 }
 
 static uint64_t median(uint64_t *l, size_t llen) {
-  qsort(l,llen,sizeof(uint64_t),cmp_uint64);
+	qsort(l,llen,sizeof(uint64_t),cmp_uint64);
 
-  if(llen%2) return l[llen/2];
-  else return (l[llen/2-1]+l[llen/2])/2;
+	if(llen%2) return l[llen/2];
+	else return (l[llen/2-1]+l[llen/2])/2;
 }
 
 static uint64_t average(uint64_t *t, size_t tlen) {
-  size_t i;
-  uint64_t acc=0;
+	size_t i;
+	uint64_t acc=0;
 
-  for(i=0;i<tlen;i++)
-    acc += t[i];
+	for(i=0;i<tlen;i++)
+		acc += t[i];
 
-  return acc/tlen;
+	return acc/tlen;
 }
 
 void print_results(const char *s, uint64_t *t, size_t tlen) {
-  size_t i;
-  static uint64_t overhead = -1;
+	size_t i;
+	static uint64_t overhead = -1;
 
-  if(tlen < 2) {
-    fprintf(stderr, "ERROR: Need a least two cycle counts!\n");
-    return;
-  }
+	if(tlen < 2) {
+		fprintf(stderr, "ERROR: Need a least two cycle counts!\n");
+		return;
+	}
 
-  if(overhead  == (uint64_t)-1)
-    overhead = cpucycles_overhead1();
+	if(overhead  == (uint64_t)-1)
+		overhead = cpucycles_overhead1();
 
-  tlen--;
-  for(i=0;i<tlen;++i)
-    t[i] = t[i+1] - t[i] - overhead;
+	tlen--;
+	for(i=0;i<tlen;++i)
+		t[i] = t[i+1] - t[i] - overhead;
 
-  printf("%s\n", s);
-  printf("median: %llu cycles/ticks\n", (unsigned long long)median(t, tlen));
-  printf("average: %llu cycles/ticks\n", (unsigned long long)average(t, tlen));
-  printf("\n");
+	printf("%s\n", s);
+	printf("median: %llu cycles/ticks\n", (unsigned long long)median(t, tlen));
+	printf("average: %llu cycles/ticks\n", (unsigned long long)average(t, tlen));
+	printf("\n");
 }
+
+
 
 static int test_kem_cca()
 {
@@ -141,107 +151,160 @@ static int test_kem_cca()
 	printf("SABER_BYTES_CCA_DEC=%d\n", SABER_BYTES_CCA_DEC);
 	printf("\n");
 	uint64_t t[repeat];
+
+	uint16_t A[SABER_L][SABER_L][SABER_N];
+	uint8_t seed_A[SABER_SEEDBYTES];
+	uint8_t seed_s[SABER_NOISE_SEEDBYTES];
+	uint16_t s[SABER_L][SABER_N];
+	uint16_t b[SABER_L][SABER_N] = {0};
+	uint16_t vp[SABER_N] = {0};
+	uint8_t nonce = 0;
+
+
+	randombytes(seed_A, SABER_SEEDBYTES);
+	shake128(seed_A, SABER_SEEDBYTES, seed_A, SABER_SEEDBYTES); // for not revealing system RNG state
+	randombytes(seed_s, SABER_NOISE_SEEDBYTES);
+	
+
 	//c0
-       gettimeofday(&timeval_start, NULL);
+	gettimeofday(&timeval_start, NULL);
 	for(i=0; i< repeat; i++){
-	   t[i] = cpucycles();
-	   pake_c0(pk, sk,pw,state_1,cid,sid,send_c0,&gamma);
+		t[i] = cpucycles();
+		GenMatrix(A, seed_A);
 	}
 	gettimeofday(&timeval_end, NULL);
-  	printf("The average time of c0:\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
-  	print_results("pake_c0: ", t, repeat);
-  	printf("----------------------\n");
-  	
-  	
+	printf("The average time of GenMatrix:\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("GenMatrix: ", t, repeat);
+	printf("----------------------\n");
+
+
   	//s0
-  	gettimeofday(&timeval_start, NULL);
+	gettimeofday(&timeval_start, NULL);
 	for(i=0; i< repeat; i++){
-	   t[i] = cpucycles();
-	   pake_s0(send_s0, send_c0, &gamma, sid, state_2,ct,key_a,pk);
+		t[i] = cpucycles();
+		GenSecret(s, seed_s);
 	}
 	gettimeofday(&timeval_end, NULL);
-  	printf("The average time of s0:\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
-  	print_results("pake_s0: ", t, repeat);
-  	printf("----------------------\n");
-  	
-  	//c1
-  	gettimeofday(&timeval_start, NULL);
+	printf("The average time of GenSecret:\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("GenSecret: ", t, repeat);
+	printf("----------------------\n");
+
+	//******************************************************
+	gettimeofday(&timeval_start, NULL);
 	for(i=0; i< repeat; i++){
-	   t[i] = cpucycles();
-	   pake_c1(session_key_c, k_prime, send_s0, sk , pk , state_1);
+		t[i] = cpucycles();
+		shake128(seed_A, SABER_SEEDBYTES, seed_A, SABER_SEEDBYTES);
 	}
 	gettimeofday(&timeval_end, NULL);
-  	printf("The average time of c1:\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
-  	print_results("pake_c1: ", t, repeat);
-  	printf("----------------------\n");
-  	
-  	//s1
-  	gettimeofday(&timeval_start, NULL);
+	printf("The average time of shake128:\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("shake128: ", t, repeat);
+	printf("----------------------\n");
+	
+	
+	//******************************************************
+	gettimeofday(&timeval_start, NULL);
 	for(i=0; i< repeat; i++){
-	   t[i] = cpucycles();
-	   pake_s1(session_key_s, k_prime, state_2);
+		t[i] = cpucycles();
+		sha3_256(seed_A, seed_A, SABER_SEEDBYTES);
 	}
 	gettimeofday(&timeval_end, NULL);
-  	printf("The average time of s1\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
-  	print_results("pake_s1: ", t, repeat);
-  	printf("----------------------\n");
-  /*
-	for(i=0; i<repeat; i++)
+	printf("The average time of sha3_256:\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("sha3_256: ", t, repeat);
+	printf("----------------------\n");
+
+ 	//******************************************************
+	gettimeofday(&timeval_start, NULL);
+	for(i=0; i< repeat; i++){
+		t[i] = cpucycles();
+		MatrixVectorMul(A, s, b, 1);
+	}
+	gettimeofday(&timeval_end, NULL);
+	printf("The average time of MatrixVectorMul\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("MatrixVectorMul: ", t, repeat);
+	printf("----------------------\n");
+
+	for (i = 0; i < SABER_L; i++)
 	{
-	    //printf("i : %lu\n",i);
-
-	    //Generation of secret key sk and public key pk pair
-		CLOCK1=cpucycles();	
-		pake_c0(pk, sk,pw,state_1,cid,sid,send_c0,&gamma);
-		CLOCK2=cpucycles();	
-		CLOCK_c0=CLOCK_c0+(CLOCK2-CLOCK1);	
-		  
-
-	    //Key-Encapsulation call; input: pk; output: ciphertext c, shared-secret k_a;	
-		CLOCK1=cpucycles();
-		pake_s0(send_s0, send_c0, &gamma, sid, state_2,ct,key_a,pk);
-		CLOCK2=cpucycles();	
-		CLOCK_s0=CLOCK_s0+(CLOCK2-CLOCK1);	
-
-
-
-	    //Key-Decapsulation call; input: sk, c; output: shared-secret k_b;	
-		CLOCK1=cpucycles();
-		pake_c1(session_key_c, k_prime, send_s0, sk , pk , state_1);
-		CLOCK2=cpucycles();	
-		CLOCK_c1=CLOCK_c1+(CLOCK2-CLOCK1);	
-
-		CLOCK1=cpucycles();
-		pake_s1(session_key_s, k_prime, state_2);
-		CLOCK2=cpucycles();	
-		CLOCK_s1=CLOCK_s1+(CLOCK2-CLOCK1);	
-
-
-		
-	    // Functional verification: check if k_a == k_b?
-		for(j=0; j<SABER_KEYBYTES; j++)
+		for (j = 0; j < SABER_N; j++)
 		{
-		//printf("%u \t %u\n", k_a[j], k_b[j]);
-			if(session_key_s[j] != session_key_c[j])
-			{
-				printf("----- ERR CCA KEM ------\n");
-				return 0;	
-				break;
-			}
+			b[i][j] = (b[i][j] + h1) >> (SABER_EQ - SABER_EP);
 		}
-		//printf("\n");
 	}
 
-	printf("Repeat is : %ld\n",repeat);
-	printf("Average times c0: \t %lu \n",CLOCK_c0/repeat);
-	printf("Average times s0: \t %lu \n",CLOCK_s0/repeat);
-	printf("Average times c1: \t %lu \n",CLOCK_c1/repeat);
-	printf("Average times s1: \t %lu \n",CLOCK_s1/repeat);
+	//******************************************************
+	gettimeofday(&timeval_start, NULL);
+	for(i=0; i< repeat; i++){
+		t[i] = cpucycles();
+		POLVECq2BS(sk, s);
+	}
+	gettimeofday(&timeval_end, NULL);
+	printf("The average time of POLVECq2BS\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("POLVECq2BS: ", t, repeat);
+	printf("----------------------\n");
 
-	printf("Average times kp mv: \t %lu \n",clock_kp_mv/repeat);
-	printf("Average times cl mv: \t %lu \n",clock_cl_mv/repeat);
-	printf("Average times sample_kp: \t %lu \n",clock_kp_sm/repeat);
-*/
+
+	//******************************************************
+	gettimeofday(&timeval_start, NULL);
+	for(i=0; i< repeat; i++){
+		t[i] = cpucycles();
+		POLVECp2BS(pk, b);
+	}
+	gettimeofday(&timeval_end, NULL);
+	printf("The average time of POLVECp2BS\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("POLVECp2BS: ", t, repeat);
+	printf("----------------------\n");
+
+
+
+	//******************************************************
+	gettimeofday(&timeval_start, NULL);
+	for(i=0; i< repeat; i++){
+		t[i] = cpucycles();
+		InnerProd(b, s, vp);
+	}
+	gettimeofday(&timeval_end, NULL);
+	printf("The average time of InnerProd\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("InnerProd: ", t, repeat);
+	printf("----------------------\n");
+	
+
+	//******************************************************
+	gettimeofday(&timeval_start, NULL);
+	for(i=0; i< repeat; i++){
+		t[i] = cpucycles();
+		InnerProd(b, s, vp);
+	}
+	gettimeofday(&timeval_end, NULL);
+	printf("The average time of InnerProd\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("InnerProd: ", t, repeat);
+	printf("----------------------\n");
+	
+	pake_c0(pk, sk,pw,state_1,cid,sid,send_c0,&gamma);
+	//******************************************************
+	gettimeofday(&timeval_start, NULL);
+	for(i=0; i< repeat; i++){
+		t[i] = cpucycles();
+		crypto_kem_enc(ct,ss_a,pk);
+	}
+	gettimeofday(&timeval_end, NULL);
+	printf("The average time of crypto_kem_enc\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("crypto_kem_enc: ", t, repeat);
+	printf("----------------------\n");
+
+
+	//******************************************************
+	gettimeofday(&timeval_start, NULL);
+	for(i=0; i< repeat; i++){
+		t[i] = cpucycles();
+		crypto_kem_dec(ss_b,ct,sk);
+	}
+	gettimeofday(&timeval_end, NULL);
+	printf("The average time of crypto_kem_enc\t %.3lf us \n", ((timeval_end.tv_usec + timeval_end.tv_sec * 	1000000) - (timeval_start.tv_sec * 1000000 + timeval_start.tv_usec)) / (repeat * 1.0));
+	print_results("crypto_kem_enc: ", t, repeat);
+	printf("----------------------\n");
+	
+
+
 	return 0;
 }
 

@@ -312,11 +312,13 @@ int pake_c1(unsigned char *sharedkey_c, unsigned char *k_prime, const unsigned c
           state[i+2*SABER_IDBYTES+(3*SABER_POLYVECBYTES)] = decapsulation_k[i];
 
 
+
       state[HASH_BYTES] = 0;
-      shake128(k_prime, SABER_KEYBYTES, state, HASH_BYTES+1);
+      sha3_256(k_prime, state, HASH_BYTES+1);
 
       state[HASH_BYTES+1] = 1;
-      shake128(sharedkey_c, SABER_KEYBYTES, state, HASH_BYTES+2);
+      sha3_256(sharedkey_c, state, HASH_BYTES+2);
+      
     }
     else{
       return (1);
@@ -331,12 +333,12 @@ int pake_c1(unsigned char *sharedkey_c, unsigned char *k_prime, const unsigned c
 int pake_s1(unsigned char *sharedkey_s, const unsigned char *k_3_c, unsigned char *state)
 {
   uint8_t k_2_prime[SABER_KEYBYTES];
-  shake128(k_2_prime, SABER_KEYBYTES, state, HASH_BYTES+1);
-
+  sha3_256(k_2_prime, state, HASH_BYTES+1);
+  
   //s0 da üretilen K ve c1 den gelen k karşılaştır
   if(memcmp(k_2_prime, k_3_c, 32) == 0){
     state[HASH_BYTES+1]  = 1;
-    shake128(sharedkey_s,SABER_KEYBYTES, state, HASH_BYTES+2);  
+    sha3_256(sharedkey_s, state, HASH_BYTES+2);
     return 0;
   }
   else{
